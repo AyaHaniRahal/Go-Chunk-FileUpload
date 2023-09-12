@@ -2,4 +2,4 @@ go 1.21.0
 
 //use ./upload-server
 
-use ./upload-server-gin
+use ./files-upload-server

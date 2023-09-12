@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload</title>
+</head>
+<body>
+    <h1>File Upload</h1>
+    <form action="http://localhost:8080/upload" method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" id="file">
+        <input type="submit" value="Upload">
+    </form>
+
+
+    <br><br>
+
+
+
+    <h1>Chunked File Upload</h1>
+    <form id="uploadForm">
+        <input type="file" id="fileInput">
+        <input type="submit" value="Upload" id="uploadButton">
+        <progress id="progressBar" value="0" max="100"></progress>
+    </form>
+
+    <script>
+        const form = document.getElementById('uploadForm');
+        const fileInput = document.getElementById('fileInput');
+          const uploadButton = document.getElementById('uploadButton');
+        const progressBar = document.getElementById('progressBar');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            progressBar.value=0;
+            fileInput.disabled = true;
+            uploadButton.disabled = true;
+
+            const file = fileInput.files[0];
+            const chunkSize = 1024 * 1024 * 4; // 4 MB chunks
+
+            const totalChunks = Math.ceil(file.size / chunkSize);
+            let currentChunk = 0;
+
+            while (currentChunk < totalChunks) {
+                const start = currentChunk * chunkSize;
+                const end = Math.min(start + chunkSize, file.size);
+                const chunk = file.slice(start, end);
+
+                const formData = new FormData();
+                formData.append('chunk', chunk);
+                formData.append('totalChunks', totalChunks);
+                formData.append('currentChunk', currentChunk);
+                formData.append('fileName',  file.name);
+
+
+                try {
+                   const response = await fetch('/chunkUpload', {
+                        method: 'POST',
+                        body: formData,
+                    });
+                     if (response.ok) {
+                        // Update the progress bar.
+                        progressBar.value = ((currentChunk + 1) / totalChunks) * 100;
+                    }
+                } catch (error) {
+                    console.error('Error uploading chunk:', error);
+                    break;
+                }
+
+                currentChunk++;
+            }
+
+             fileInput.disabled = false;
+             uploadButton.disabled = false;
+
+            console.log('File upload complete!');
+        });
+    </script>
+
+
+
+
+</body>
+</html>
